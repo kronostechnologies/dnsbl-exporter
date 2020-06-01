@@ -61,16 +61,33 @@ func getIps(hostname string) []string {
 	resolverUrl.RawQuery = query.Encode()
 
 	requestContext, _ := context.WithTimeout(context.Background(), time.Second*1)
-	request, _ := http.NewRequest("GET", resolverUrl.String(), nil)
+	request, requestError := http.NewRequest("GET", resolverUrl.String(), nil)
+	if requestError != nil {
+		panic(requestError)
+	}
+
 	request.Header.Add("Accept", "application/dns-json")
 	request.WithContext(requestContext)
 
-	response, _ := http.DefaultClient.Do(request)
-	out, _ := ioutil.ReadAll(response.Body)
-	response.Body.Close()
+	response, responseError := http.DefaultClient.Do(request)
+	if responseError != nil {
+		panic(responseError)
+	}
+
+	out, readError := ioutil.ReadAll(response.Body)
+	if readError != nil {
+		panic(readError)
+	}
+	closeError := response.Body.Close()
+	if closeError != nil {
+		panic(closeError)
+	}
 
 	dnsResponse := DnsResponse{}
-	json.Unmarshal(out, &dnsResponse)
+	jsonError := json.Unmarshal(out, &dnsResponse)
+	if jsonError != nil {
+		panic(jsonError)
+	}
 
 	var ipAddresses []string
 
