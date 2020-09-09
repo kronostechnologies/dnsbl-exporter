@@ -20,6 +20,8 @@ var (
 	}
 	ipRegex      = regexp.MustCompile(`^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)$`)
 	reverseIpSub = "$4.$3.$2.$1.%s"
+	metrics      []*Metric
+	nextCheck    time.Time
 )
 
 type stringSet map[string]*struct{}
@@ -103,42 +105,55 @@ func getIps(hostname string) []string {
 }
 
 func getMetrics(addresses []string) []*Metric {
-	var metrics []*Metric
 
-	for _, address := range addresses {
-		var ips []string
+	if updateCheck(time.Duration(config.Interval) * time.Second) {
+		metrics = metrics[:0]
 
-		if ipRegex.MatchString(address) {
-			ips = []string{address}
-		} else {
-			ips = getIps(address)
-		}
+		for _, address := range addresses {
+			var ips []string
 
-		for _, ip := range ips {
-			blHostFormat := ipRegex.ReplaceAllString(ip, reverseIpSub)
-			blResults := getIps(fmt.Sprintf(blHostFormat, config.Blacklist))
-
-			var ipListCount = 0
-			var ipListNames = &stringSet{}
-
-			for _, result := range blResults {
-				ipListCount++
-
-				if name, ok := config.ListCodes[result]; ok {
-					ipListNames.Add(name)
-				} else {
-					ipListNames.Add(result)
-				}
+			if ipRegex.MatchString(address) {
+				ips = []string{address}
+			} else {
+				ips = getIps(address)
 			}
 
-			metrics = append(metrics, &Metric{
-				Hostname:  address,
-				IpAddress: ip,
-				Lists:     ipListNames.ToList(),
-				ListCount: ipListCount,
-			})
+			for _, ip := range ips {
+				blHostFormat := ipRegex.ReplaceAllString(ip, reverseIpSub)
+				blResults := getIps(fmt.Sprintf(blHostFormat, config.Blacklist))
+
+				var ipListCount = 0
+				var ipListNames = &stringSet{}
+
+				for _, result := range blResults {
+					ipListCount++
+
+					if name, ok := config.ListCodes[result]; ok {
+						ipListNames.Add(name)
+					} else {
+						ipListNames.Add(result)
+					}
+				}
+
+				metrics = append(metrics, &Metric{
+					Hostname:  address,
+					IpAddress: ip,
+					Lists:     ipListNames.ToList(),
+					ListCount: ipListCount,
+				})
+			}
 		}
+
 	}
 
 	return metrics
+}
+
+func updateCheck(interval time.Duration) bool {
+	now := time.Now()
+	if nextCheck.Before(now) {
+		nextCheck = now.Add(interval)
+		return true
+	}
+	return false
 }

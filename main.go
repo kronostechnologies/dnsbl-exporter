@@ -13,6 +13,7 @@ type Config struct {
 	Addresses []string
 	Blacklist string
 	ListCodes map[string]string `yaml:"listCodes"`
+	Interval int
 }
 
 var config Config
@@ -30,6 +31,10 @@ func main() {
 	ue := yaml.Unmarshal(yamlFile, &config)
 	if ue != nil {
 		panic(ue)
+	}
+
+	if config.Interval == 0 {
+		config.Interval = 3600
 	}
 
 	prometheus.MustRegister(newBlCollector())
