@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -76,7 +76,7 @@ func getIps(hostname string) []string {
 		panic(responseError)
 	}
 
-	out, readError := ioutil.ReadAll(response.Body)
+	out, readError := io.ReadAll(response.Body)
 	if readError != nil {
 		panic(readError)
 	}

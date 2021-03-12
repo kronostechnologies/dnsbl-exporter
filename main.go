@@ -4,9 +4,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 )
 
 type Config struct {
@@ -23,7 +23,7 @@ func health(w http.ResponseWriter, _ *http.Request) {
 }
 
 func main() {
-	yamlFile, ye := ioutil.ReadFile("config.yaml")
+	yamlFile, ye := os.ReadFile("config.yaml")
 	if ye != nil {
 		panic(ye)
 	}
