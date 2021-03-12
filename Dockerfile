@@ -1,8 +1,7 @@
 FROM golang:1.16 AS builder
-RUN apt update ; apt install upx-ucl -y ; apt clean
 WORKDIR /go/src/github.com/kronostechnologies/dnsbl-exporter/
 COPY * ./
-RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o dnsbl-exporter . && upx --best dnsbl-exporter
+RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o dnsbl-exporter .
 RUN echo "nobody:x:65534:65534:nobody:/:" > /tmp/passwd
 
 FROM scratch
